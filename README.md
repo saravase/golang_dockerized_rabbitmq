@@ -1,0 +1,1 @@
+# golang_dockerized_rabbitmq
