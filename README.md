@@ -55,13 +55,17 @@
     $ cd /app/publisher
 
 #### Build docker publisher application:
-    $ docker build . -t saravase/rabbitmq-publisher:v1.0.0
+    $ docker build . -t <docker-id>/rabbitmq-publisher:v1.0.0
 
 #### Run docker publisher application:
     $ docker run -it --rm --net rabbits -e RABBIT_HOST=rabbit-1 -e RABBIT_PORT=5672 -e RABBIT_USER=guest  -e RABBIT_PASSWORD=guest -p 9000:9000 <docker-id>/rabbitmq-publisher:v1.0.0
 
-#### Publish message in POST [localhost:9000/publish/:message]:
-    localhost:9000/publish/data1
+#### Publish message in POST [localhost:9000/publish]:
+    localhost:9000/publish
+    
+    {
+        "msg": "data1"
+    }
 
 #### Publish message O/P:
     2020/12/05 16:38:04 Published message: data1
@@ -75,7 +79,7 @@
     $ cd /app/consumer
 
 #### Build docker publisher application:
-    $ docker build . -t saravase/rabbitmq-consumer:v1.0.0
+    $ docker build . -t <docker-id>/rabbitmq-consumer:v1.0.0
 
 #### Run docker publisher application:
     $ docker run -it --rm --net rabbits -e RABBIT_HOST=rabbit-1 -e RABBIT_PORT=5672 -e RABBIT_USER=guest  -e RABBIT_PASSWORD=guest <docker-id>/rabbitmq-consumer:v1.0.0
