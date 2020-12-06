@@ -87,3 +87,60 @@
 #### Consume O/P:
     2020/12/05 16:38:31  [*] Waiting for messages. To exit press CTRL+C
     2020/12/05 16:38:31 Received a message: data1
+
+## Clustering
+
+
+    $ docker network create rabbits
+
+    $ docker run -d --rm --net rabbits --hostname rabbit-1 --name rabbit-1 rabbitmq:3.8
+
+    $ docker exec -it rabbit-1 cat /var/lib/rabbitmq/.erlang.cookie
+
+        BRYMAXXWBGGLNODJWFPF
+
+#### Manual clutering:
+   
+    $ docker run -d --rm --net rabbits --hostname rabbit-1 --name rabbit-1 -p 9091:15672 rabbitmq:3.    8-management
+    docker run -d --rm --net rabbits --hostname rabbit-2 --name rabbit-2 -p 9092:15672 rabbitmq:3.8-management
+    docker run -d --rm --net rabbits --hostname rabbit-3 --name rabbit-3 -p 9093:15672 rabbitmq:3.8-management
+
+    $ docker exec -it rabbit-1 rabbitmqctl cluster_status
+
+    Node-2:
+
+    docker exec -it rabbit-2 rabbitmqctl stop_app
+    docker exec -it rabbit-2 rabbitmqctl reset
+    docker exec -it rabbit-2 rabbitmqctl join_cluster rabbit@rabbit-1
+    docker exec -it rabbit-2 rabbitmqctl start_app
+    docker exec -it rabbit-2 rabbitmqctl cluster_status
+
+    Node-3:
+
+    docker exec -it rabbit-3 rabbitmqctl stop_app
+    docker exec -it rabbit-3 rabbitmqctl reset
+    docker exec -it rabbit-3 rabbitmqctl join_cluster rabbit@rabbit-1
+    docker exec -it rabbit-3 rabbitmqctl start_app
+    docker exec -it rabbit-3 rabbitmqctl cluster_status
+
+    docker rm -f rabbit-1
+    docker rm -f rabbit-2
+    docker rm -f rabbit-3
+
+#### Authentication Erlang cookie:
+
+    docker run -d --rm --net rabbits --hostname rabbit-1 --name rabbit-1 -p 9091:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF rabbitmq:3.8-management
+    docker run -d --rm --net rabbits --hostname rabbit-2 --name rabbit-2 -p 9092:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF rabbitmq:3.8-management
+    docker run -d --rm --net rabbits --hostname rabbit-3 --name rabbit-3 -p 9093:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF rabbitmq:3.8-management
+
+
+#### Override primary config file:
+
+    docker run -d --rm --net rabbits --hostname rabbit-1 --name rabbit-1 -p 9091:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
+    docker run -d --rm --net rabbits --hostname rabbit-2 --name rabbit-2 -p 9092:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
+    docker run -d --rm --net rabbits --hostname rabbit-3 --name rabbit-3 -p 9093:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
+
+#### Replication
+
+
+#### Mirroring:

@@ -37,6 +37,7 @@ func publishHandler(c *fiber.Ctx) error {
 
 	conn, err := amqp.Dial("amqp://" + rabbit_user + ":" + rabbit_password + "@" + rabbit_host + ":" + rabbit_port + "/")
 	if err != nil {
+		log.Print(err)
 		return handleError(c, err, "Failed to connect to RabbitMQ", fiber.StatusInternalServerError)
 	}
 	defer conn.Close()
