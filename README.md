@@ -1,21 +1,5 @@
 # golang_dockerized_rabbitmq
 
-### Golang:
-
-The Go programming language is an open source project to make programmers more productive.
-
-Go is expressive, concise, clean, and efficient. Its concurrency mechanisms make it easy to write programs that get the most out of multicore and networked machines, while its novel type system enables flexible and modular program construction. Go compiles quickly to machine code yet has the convenience of garbage collection and the power of run-time reflection. It's a fast, statically typed, compiled language that feels like a dynamically typed, interpreted language.
-
-### gofiber:
-
-Fiber is an Express inspired web framework built on top of Fasthttp, the fastest HTTP engine for Go. Designed to ease things up for fast development with zero memory allocation and performance in mind.
-
-### RabbitMQ:
-
- RabbitMQ is one of the most popular open source message brokers. From T-Mobile to Runtastic, RabbitMQ is used worldwide at small startups and large enterprises.
-
-RabbitMQ is lightweight and easy to deploy on premises and in the cloud. It supports multiple messaging protocols. RabbitMQ can be deployed in distributed and federated configurations to meet high-scale, high-availability requirements
-
 ### Environment Setup:
 
 #### Create unique network:
@@ -149,14 +133,34 @@ RabbitMQ is lightweight and easy to deploy on premises and in the cloud. It supp
     docker run -d --rm --net rabbits --hostname rabbit-2 --name rabbit-2 -p 9092:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF rabbitmq:3.8-management
     docker run -d --rm --net rabbits --hostname rabbit-3 --name rabbit-3 -p 9093:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF rabbitmq:3.8-management
 
-
 #### Override primary config file:
 
-    docker run -d --rm --net rabbits --hostname rabbit-1 --name rabbit-1 -p 9091:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
-    docker run -d --rm --net rabbits --hostname rabbit-2 --name rabbit-2 -p 9092:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
-    docker run -d --rm --net rabbits --hostname rabbit-3 --name rabbit-3 -p 9093:15672 -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq rabbitmq:3.8-management
+    docker run -d --rm --net rabbits -v ${PWD}/app/config/rabbit-1/:/config/ -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq --hostname rabbit-1 --name rabbit-1 -p 9091:15672 rabbitmq:3.8-management
 
-#### Replication
+    docker run -d --rm --net rabbits -v ${PWD}/app/config/rabbit-2/:/config/ -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq --hostname rabbit-2 --name rabbit-2 -p 9092:15672 rabbitmq:3.8-management
 
+    docker run -d --rm --net rabbits -v ${PWD}/app/config/rabbit-3/:/config/ -e RABBITMQ_ERLANG_COOKIE=BRYMAXXWBGGLNODJWFPF -e RABBITMQ_CONFIG_FILE=/config/rabbitmq --hostname rabbit-3 --name rabbit-3 -p 9093:15672 rabbitmq:3.8-management
 
 #### Mirroring:
+
+    docker exec -it rabbit-1 rabbitmq-plugins enable rabbitmq_federation
+    docker exec -it rabbit-2 rabbitmq-plugins enable rabbitmq_federation
+    docker exec -it rabbit-3 rabbitmq-plugins enable rabbitmq_federation
+
+    docker exec -it rabbit-1 bash
+
+    rabbitmqctl set_policy ha-fed ".*" '{"federation-upstream-set":"all", "ha-mode":"nodes", "ha-params":["rabbit@rabbit-1", "rabbit@rabbit-2", "rabbit@rabbit-3"]}' --priority 1 --apply-to queues
+
+#### Auto Sync:
+
+     docker exec -it rabbit-1 bash
+     
+     rabbitmqctl set_policy ha-fed ".*" '{"federation-upstream-set":"all", "ha-sync-mode":"automatic", "ha-mode":"nodes", "ha-params":["rabbit@rabbit-1", "rabbit@rabbit-2", "rabbit@rabbit-3"]}' --priority 1 --apply-to queues
+
+#### Start Pulisher:
+
+    docker run -it --rm --net rabbits -e RABBIT_HOST=rabbit-1 -e RABBIT_PORT=5673 -e RABBIT_USER=guest  -e RABBIT_PASSWORD=guest -p 9000:9000 saravase/rabbitmq-publisher:v1.0.0
+
+#### Start Consumer:
+
+    docker run -it --rm --net rabbits -e RABBIT_HOST=rabbit-1 -e RABBIT_PORT=5673 -e RABBIT_USER=guest  -e RABBIT_PASSWORD=guest saravase/rabbitmq-consumer:v1.0.0
